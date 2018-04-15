@@ -1,6 +1,7 @@
 from .workspace import FileProvider
 import zipfile
 import os
+import glob
 
 
 class JarFileProvider(FileProvider):
@@ -13,6 +14,9 @@ class JarFileProvider(FileProvider):
 
     def open_path(self, path, mode="r"):
         return self.jarfile.open(path, mode)
+
+    def list_paths(self):
+        return filter(lambda x: x.startswith("assets"), self.jarfile.filelist())
 
     def __getstate__(self):
         odict = self.__dict__
@@ -32,3 +36,9 @@ class FolderFileProvider(FileProvider):
 
     def provides_path(self, path):
         return os.path.exists(os.path.join(self.folder, path))
+
+    def list_paths(self):
+        all_files = []
+        for root, _, files in os.walk(self.folder):
+            all_files.extend(filter(lambda x: x.startswith("assets"), map(lambda x: os.path.join(root, x), files)))
+        return all_files
