@@ -7,6 +7,11 @@
 To run, install python requirements in requirements.txt (or make a virtualenv)
 Then, run main.py
 
+### Requirements
+
+- Python >=3.6
+- PyQt5
+
 ## Releases
 
 todo (will get added by jenkins)
