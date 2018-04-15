@@ -60,11 +60,12 @@ class FileProvider(metaclass=abc.ABCMeta):
         return False
 
     @abc.abstractmethod
-    def open_path(self, path):
+    def open_path(self, path, mode="r"):
         """
         Return an open file for this path
 
         :param path: the path
+        :param: mode: mode to open file in
         :return: the open file
         """
         return None
@@ -82,10 +83,11 @@ class Workspace:
         self.providers = []
         self.name = name
 
-    def get_file(self, path):
+    def get_file(self, path, mode="r"):
         """
         Gets a reference to an open file
 
+        :param mode: mode to open file in
         :param path: path to file, can be either a string (real path) or ResourceLocation (mod and path)
         :return: an open file referring to it
         """
@@ -94,7 +96,7 @@ class Workspace:
 
         for i in self.providers:
             if i.provides_path(path):
-                return i.open(path)
+                return i.open(path, mode)
         raise FileNotFoundError(f"Could not find a reference to file {path}")
 
     def has_file(self, path):
