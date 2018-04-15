@@ -11,6 +11,10 @@ class BlockModel:
         - a list of cubes (elements)
         - texture variables and resourcelocations (if defined)
         - transforms
+
+    When rendering a block model, you need:
+        - a ModelAtlas (use create_model_atlas)
+        - list of vertices and uvs
     """
     def __init__(self):
         self.cubes = None

@@ -45,6 +45,13 @@ class ResourceLocation:
     def __getitem__(self, item):
         return self.data[item]
 
+    def __add__(self, other):
+        if type(other) is str:
+            return ResourceLocation(self.data[0], self.data[1] + other)
+
+    def __iadd__(self, other):
+        self.data[1] += other
+
     def get_real_path(self):
         return os.path.join("assets", self.data[0], self.data[1])
 
@@ -144,7 +151,7 @@ class Workspace:
 
         .. note:
             This function is cached to avoid large amounts of disk activity.
-            If you want to force a rescan of the disk, use :py:meth:`~Workspace.refresh_file_cache`
+            If you want to force a rescan of the disk, use :py:meth:`Workspace.refresh_file_cache`
 
         :return: A list of all paths
         """
