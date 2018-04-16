@@ -37,7 +37,7 @@ class ResourceLocation:
             self.data = [args[0], os.path.join(*args[1:])]
 
     def __repr__(self):
-        return ":".join(self.data)
+        return f'ResourceLocation({":".join(self.data)})'
 
     def __str__(self):
         return ":".join(self.data)
@@ -52,14 +52,32 @@ class ResourceLocation:
     def __iadd__(self, other):
         self.data[1] += other
 
+    def __eq__(self, other):
+        if isinstance(other, ResourceLocation):
+            return self.get_real_path() == other.get_real_path()
+        else:
+            return super(ResourceLocation, self).__eq__(other)
+
     def get_real_path(self):
         return os.path.join("assets", self.data[0], self.data[1])
 
 
 class DomainResourceLocation(ResourceLocation):
-    def __init__(self, domain, *resourcelocation):
+    """
+    DomainResourceLocations are like resourcelocations, but prepend a domain before the path when you know
+    what kind of resource you want. Optionally adds filetypes
+    """
+    def __init__(self, domain, *resourcelocation, filetype=""):
+        """
+        Create a new DomainResourceLocation
+
+        >>> ResourceLocation("mc", "textures/123.png") == DomainResourceLocation("textures", "mc", "123", filetype=".png")
+
+        :param domain: The type or domain of a resource
+        :param resourcelocation: normal parameters to pass to resourcelocation constructor
+        """
         super().__init__(*resourcelocation)
-        self.data[1] = os.path.join(domain, self.data[1])
+        self.data[1] = os.path.join(domain, self.data[1]) + filetype
 
 
 class FileProvider(metaclass=abc.ABCMeta):
@@ -128,9 +146,11 @@ class Workspace:
         if hasattr(path, "get_real_path") and callable(path.get_real_path):
             path = path.get_real_path()
 
+        path = os.path.normpath(path)
+
         for i in self.providers:
             if i.provides_path(path):
-                return i.open(path, mode)
+                return i.open_path(path, mode)
         raise FileNotFoundError(f"Could not find a reference to file {path}")
 
     def has_file(self, path):
@@ -142,6 +162,8 @@ class Workspace:
         """
         if hasattr(path, "get_real_path") and callable(path.get_real_path):
             path = path.get_real_path()
+
+        path = os.path.normpath(path)
 
         return any((x.provides_path(path) for x in self.providers))
 

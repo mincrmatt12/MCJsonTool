@@ -10,9 +10,12 @@ class JarFileProvider(FileProvider):
         self.jarfile = zipfile.ZipFile(os.path.abspath(path_to_jar))
 
     def provides_path(self, path):
-        return path in self.jarfile.filelist()
+        path = path.replace(os.path.sep, "/")  # jarfiles are wierd, okay?
+        return path in self.jarfile.namelist()
 
     def open_path(self, path, mode="r"):
+        mode = mode.replace("b", "")
+        path = path.replace(os.path.sep, "/")  # jarfiles are wierd, okay?
         return self.jarfile.open(path, mode)
 
     def list_paths(self):
