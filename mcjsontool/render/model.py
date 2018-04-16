@@ -105,7 +105,7 @@ class Cube:
         Create a list of vertices from this cube, pre-transformed
 
         :param atlas: An atlas to use
-        :return: List of vertices
+        :return: List of vertices, list of uvs
         """
         vertices = []
         uvs = []
@@ -165,6 +165,12 @@ class BlockModel:
         return ModelAtlas(self._get_loaded_textures(workspace))
 
     def compile_to_vertex_list(self, atlas):
+        """
+        Create a list of vertices from this model. Transforming for desired display is left to other code
+
+        :param atlas: An atlas to use
+        :return: List of vertices, list of uvs
+        """
         verts, uvs = [], []
         for i in self.cubes:
             nv, nu = i.compile_to_vertex_list(atlas)
@@ -173,6 +179,11 @@ class BlockModel:
         return verts, uvs
 
     def _get_loaded_textures(self, workspace):
+        """
+        Get a dictionary of all textures in Texture format
+        :param workspace: workspace to load from
+        :return: dict of textures
+        """
         if self.cubes is None:
             usable = list(self.textures.keys())
         else:
