@@ -164,6 +164,14 @@ class BlockModel:
         self._update_textures()
         return ModelAtlas(self._get_loaded_textures(workspace))
 
+    def compile_to_vertex_list(self, atlas):
+        verts, uvs = [], []
+        for i in self.cubes:
+            nv, nu = i.compile_to_vertex_list(atlas)
+            verts.extend(nv)
+            uvs.extend(nu)
+        return verts, uvs
+
     def _get_loaded_textures(self, workspace):
         if self.cubes is None:
             usable = list(self.textures.keys())
@@ -173,7 +181,6 @@ class BlockModel:
                 for face in cube.faces:
                     usable.append(cube.faces[face][0])
             usable = list(set(usable))
-        print(usable)
         filtered_textures = {k: v for k, v in self.textures.items() if isinstance(v, ResourceLocation) and k in usable}
         return {k: Texture.load_from_file(workspace, v, True) for k, v in filtered_textures.items()}
 

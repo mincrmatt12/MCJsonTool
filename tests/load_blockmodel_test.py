@@ -5,4 +5,4 @@ from mcjsontool.render.model import BlockModel
 workspace = Workspace("test workspace", 0)
 workspace.providers.append(JarFileProvider(r"C:\Users\matth\AppData\Roaming\.minecraft\versions\1.12\1.12.jar"))
 
-a = BlockModel.load_from_file(workspace, ResourceLocation("minecraft", "models/block/andesite.json"))
+a = BlockModel.load_from_file(workspace, ResourceLocation("minecraft", "models/block/dark_oak_inner_stairs.json"))

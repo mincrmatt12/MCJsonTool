@@ -114,14 +114,9 @@ class ModelAtlas:
         :param to: here
         """
         self._positions[texture] = to
-        print(to, texture, self.textures[texture].h, self.size)
-        print(self.data.shape)
-        print("s", (to[1], to[1]+self.textures[texture].h, to[0], to[0]+self.textures[texture].w))
-
-        data = np.frombuffer(self.textures[texture].data, dtype=np.uint8).reshape((self.textures[texture].h, self.textures[texture].w, 4))
-        print(data.shape)
-        print(self.data[to[1]:to[1]+self.textures[texture].h, to[0]:to[0]+self.textures[texture].w].shape)
-        self.data[to[1]:to[1] + self.textures[texture].h, to[0]:to[0] + self.textures[texture].w] = data
+        self.data[to[1]:to[1] + self.textures[texture].h, to[0]:to[0] + self.textures[texture].w] = \
+            np.frombuffer(self.textures[texture].data, dtype=np.uint8).reshape((self.textures[texture].h,
+                                                                                self.textures[texture].w, 4))
         # that crazy thing does a blit with numpy magic (maybe) (hopefully)
 
     def _draw_grid(self, c_pos, grid):
@@ -161,14 +156,10 @@ class ModelAtlas:
 
         h_size = sizes[-1]
         row_count = min(len(grids), ModelAtlas.TEX_SIZE // h_size)
-        print(len(grids), ModelAtlas.TEX_SIZE // h_size)
-        print(grids)
-        print(row_count)
         if row_count < 1:
             row_count = 1
         h_size = row_count * sizes[-1]
         columns = math.ceil(len(grids)/row_count)
-        print(h_size, columns*sizes[-1])
 
         self.data = np.zeros((columns*sizes[-1], h_size, 4))
 
