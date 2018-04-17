@@ -1,6 +1,6 @@
 import pathlib
 
-from PyQt5.QtCore import QAbstractItemModel, Qt, QVariant, QModelIndex, pyqtSlot
+from PyQt5.QtCore import QAbstractItemModel, Qt, QVariant, QModelIndex, pyqtSlot, QSortFilterProxyModel
 from PyQt5.QtWidgets import QWidget, QTabWidget, QTreeView, QVBoxLayout, QSizePolicy
 
 from mcjsontool.resource.workspace import ResourceLocation, Workspace
@@ -69,7 +69,6 @@ class FileModel(QAbstractItemModel):
                         nodes[basename] = new_node
                 node = nodes[basename]
                 node.children.append(FileModel.FileModelNode(node, resource, split_up[-1]))
-
 
     def flags(self, index):
         n = self.nodeFromIndex(index)
@@ -155,5 +154,8 @@ class NavigatorWidget(QWidget):
         self.tab_view.clear()
         for i in self.models:
             tree_widget = QTreeView(self)
-            tree_widget.setModel(i)
+            proxy = QSortFilterProxyModel(self)
+            proxy.setSourceModel(i)
+            tree_widget.setModel(proxy)
+            tree_widget.setSortingEnabled(True)
             self.tab_view.addTab(tree_widget, i.tabName())
