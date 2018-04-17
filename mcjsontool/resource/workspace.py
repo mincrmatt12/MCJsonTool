@@ -1,6 +1,7 @@
 import abc
 import os
 import time
+import pathlib
 
 
 REFRESH_FILES_AFTER = 1200
@@ -35,6 +36,15 @@ class ResourceLocation:
             self.data = list(args)
         else:
             self.data = [args[0], os.path.join(*args[1:])]
+
+    @classmethod
+    def from_real_path(cls, path):
+        path = pathlib.Path(path)
+        if path.parts[0] != "assets":
+            raise ValueError(f"Path must be relative to the folder containing assets. Got {path.parts[0]} instead.")
+        domain = path.parts[1]
+        relative_path = pathlib.Path(*path.parts[2:])
+        return cls(domain, str(relative_path))
 
     def __repr__(self):
         return f'ResourceLocation({":".join(self.data)})'

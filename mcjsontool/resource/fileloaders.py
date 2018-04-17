@@ -19,7 +19,7 @@ class JarFileProvider(FileProvider):
         return self.jarfile.open(path, mode)
 
     def list_paths(self):
-        return filter(lambda x: x.startswith("assets"), self.jarfile.filelist())
+        return filter(lambda x: x.startswith("assets") and ".mcassetsroot" not in x, self.jarfile.namelist())
 
     def __getstate__(self):
         odict = self.__dict__
