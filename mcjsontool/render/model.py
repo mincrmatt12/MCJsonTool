@@ -193,6 +193,8 @@ class BlockModel:
                     usable.append(cube.faces[face][0])
             usable = list(set(usable))
         filtered_textures = {k: v for k, v in self.textures.items() if isinstance(v, ResourceLocation) and k in usable}
+        if len(filtered_textures) is 0:
+            raise ValueError("fail')")
         return {k: Texture.load_from_file(workspace, v, True) for k, v in filtered_textures.items()}
 
     def apply_state(self, state):

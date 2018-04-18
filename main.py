@@ -1,4 +1,6 @@
 import sys
+
+from PyQt5.QtGui import QSurfaceFormat
 from PyQt5.QtWidgets import QApplication
 from mcjsontool.ui.ui import JSONToolUI
 
@@ -12,11 +14,15 @@ workspace.providers.append(JarFileProvider(r"C:\Users\matth\AppData\Roaming\.min
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-
+    format_ = QSurfaceFormat()
+    format_.setVersion(4, 3)
+    format_.setDepthBufferSize(24)
+    format_.setProfile(QSurfaceFormat.CoreProfile)
+    QSurfaceFormat.setDefaultFormat(format_)
     # temp: setup temp workspac
 
     w = JSONToolUI()
-    w.navWidget.setWorkspace(workspace)
+    w.setWorkspace(workspace)
     w.show()
 
     sys.exit(app.exec_())

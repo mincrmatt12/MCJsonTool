@@ -1,17 +1,90 @@
 import ctypes
 import glm
-import numpy as np
-import functools
-from PyQt5.QtCore import QThread, pyqtSignal, QObject
-from PyQt5.QtGui import QImage, QOpenGLContext, QOpenGLVertexArrayObject, QOpenGLBuffer, QOpenGLTexture, \
-    QOpenGLShaderProgram, QOpenGLShader, QSurface, QOpenGLVersionProfile, QMatrix4x4, QSurfaceFormat
+
 import OpenGL.GL as GL
+import numpy as np
+from PyQt5.QtCore import QThread, pyqtSignal, QObject, pyqtSlot
+from PyQt5.QtGui import QImage, QOpenGLContext, QOpenGLShaderProgram, QOpenGLShader, QSurface, QOpenGLVersionProfile, \
+    QOffscreenSurface, QSurfaceFormat
+from queue import Queue
 
 from mcjsontool.render.model import BlockModel
+from mcjsontool.resource.workspace import Workspace
 
 
 class OffscreenModelRendererThread(QThread):
     renderedTexture = pyqtSignal(str, QImage)
+
+    def __init__(self, parent_screen):
+        super().__init__()
+        self.parent_screen = parent_screen
+        self.started.connect(self.started_)
+        self.workspace = None
+        self.offscreen_surface = QOffscreenSurface()
+        self.offscreen_surface.requestedFormat().setVersion(4, 3)
+        self.offscreen_surface.requestedFormat().setProfile(QSurfaceFormat.CoreProfile)
+        self.offscreen_surface.requestedFormat().setDepthBufferSize(24)
+        self.offscreen_surface.setFormat(self.offscreen_surface.requestedFormat())
+        self.offscreen_surface.create()
+
+    @pyqtSlot()
+    def started_(self):
+        self.ctx = QOpenGLContext(self.offscreen_surface)
+        self.ctx.setFormat(self.offscreen_surface.requestedFormat())
+        self.ctx.create()
+        self.fbo = -1
+        self.tex = -1
+        self.rbuf = -1
+        self.setup_fbo()
+
+        self.renderer = ModelRenderer(self.workspace, self.offscreen_surface)
+
+    @pyqtSlot(Workspace)
+    def setWorkspace(self, w):
+        pass
+        if hasattr(self, "renderer"):
+            self.renderer.set_workspace(w)
+        else:
+            self.workspace = w
+
+    def setup_fbo(self):
+        self.ctx.makeCurrent(self.offscreen_surface)
+        self.tex = GL.glGenTextures(1)
+        self.fbo = GL.glGenFramebuffers(1)
+        self.rbuf = GL.glGenRenderbuffers(1)
+
+        GL.glBindTexture(GL.GL_TEXTURE_2D, self.tex)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, 64, 64, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, None)
+
+        GL.glBindRenderbuffer(GL.GL_RENDERBUFFER, self.rbuf)
+        GL.glRenderbufferStorage(GL.GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT24, 64, 64)
+
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self.fbo)
+        GL.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_RENDERBUFFER, self.rbuf)
+        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0, GL.GL_TEXTURE_2D, self.tex, 0)
+        if GL.glCheckFramebufferStatus(GL.GL_FRAMEBUFFER) != GL.GL_FRAMEBUFFER_COMPLETE:
+            raise RuntimeError("Framebuffer is not complete!")
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
+        GL.glBindRenderbuffer(GL.GL_RENDERBUFFER, 0)
+
+    @pyqtSlot(str, BlockModel)
+    def queue_render_order(self, order_name, model):
+        self.ctx.makeCurrent(self.offscreen_surface)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self.fbo)
+        GL.glClearColor(0, 0, 0, 0)
+        GL.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT)
+        self.renderer.setup_data_for_block_model(model)
+        self.renderer.resize(64, 64)
+        self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(32, 32, 32), glm.vec3(0, 0, 0), glm.vec3(0, 1, 0)), None)
+        GL.glFlush()
+        tex_str = GL.glReadPixels(0, 0, 64, 64, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, outputType=bytes)
+        print(tex_str)
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
+        qimage = QImage(tex_str, 64, 64, 64*4, QImage.Format_RGBA8888)
+        qimage = qimage.mirrored(vertical=True)
+        self.renderedTexture.emit(order_name, qimage)
 
 
 class ModelRenderer(QObject):
@@ -20,10 +93,9 @@ class ModelRenderer(QObject):
 
     You need: an opengl surface, an opengl context and a workspace instance.
     """
-    def __init__(self, ogl_context: QOpenGLContext, workspace, surface: QSurface):
+    def __init__(self, workspace, surface: QSurface):
         super().__init__()
 
-        self.ogl_context = ogl_context
         self.surf = surface
         prof = QOpenGLVersionProfile()
         prof.setVersion(2, 0)
@@ -43,6 +115,10 @@ class ModelRenderer(QObject):
         self.shader.link()
 
         self.proj_mat = glm.perspective(1.57, self.surf.size().width()/self.surf.size().height(), 0.1, 100)
+        self.texture = GL.glGenTextures(1)
+
+    def set_workspace(self, workspace):
+        self.workspace = workspace
 
     def setup_data_for_block_model(self, model: BlockModel):
         """
@@ -54,8 +130,8 @@ class ModelRenderer(QObject):
         :param model: the blockmodel to setup for
         """
         self.current_model = model
+        print(self.workspace)
         atlas = model.create_model_atlas(self.workspace)
-        self.texture = GL.glGenTextures(1)
         GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST)
@@ -82,6 +158,7 @@ class ModelRenderer(QObject):
         self.shader.bind()
         GL.glUniformMatrix4fv(1, 1, GL.GL_FALSE, glm.value_ptr(proj_view))
         GL.glUniformMatrix4fv(0, 1, GL.GL_FALSE, glm.value_ptr(model_transform))
+        print(proj_view * model_transform * self.array[0])
         GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture)
 
     def draw_loaded_model(self, view_matrix, transform_name):
@@ -91,9 +168,6 @@ class ModelRenderer(QObject):
         :param view_matrix: View matrix (y should be up)
         :param transform_name: Transform name in model
         """
-        self.ogl_context.makeCurrent(self.surf)
-        # print("shader_l", GL.glGetError())
-
         if self.current_model is None:
             raise ValueError("No model is loaded!")
 
