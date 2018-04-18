@@ -38,7 +38,7 @@ class MyOPENGL(QOpenGLWindow):
         print("A")
         GL.glClearColor(0, 0, 0, 0)
         GL.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT)
-        a = BlockModel.load_from_file(workspace, all_models[self.i])
+        a = BlockModel.load_from_file(workspace, ResourceLocation("minecraft", "models/block/andesite.json"))
         self.i += 1
         try:
             self.renderer.setup_data_for_block_model(a)

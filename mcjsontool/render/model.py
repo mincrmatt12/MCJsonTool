@@ -18,7 +18,7 @@ class Cube:
         - south = +z
         - up = +y
 
-    Faces dictionary refers to (texture_name, uv1, uv2)
+    Faces dictionary refers to (texture_name, uv1, uv2, rot)
 
     TODO: add rotation support
     """
@@ -69,15 +69,18 @@ class Cube:
         """
         del self.faces[face]
 
-    def set_face(self, face, texture, uv1=None, uv2=None):
+    def set_face(self, face, texture, rot, uv1=None, uv2=None):
         """
         Add a face to this cube
 
         :param face: face name, one of (down, up, north, south, west, east)
         :param texture: texture reference (variable name)
+        :param rot: rotation amount (div by 90)
         :param uv1: x1, y1
         :param uv2: x2, y2
+
         """
+
         if uv1 is None and uv2 is None:
             dat = Cube.FACES[face]
             uv1 = [
@@ -89,7 +92,10 @@ class Cube:
                 max(0, min(16, (self.start if not dat[4][1] else self.end)[int(abs(dat[3][1]))])),
             ]
 
-        self.faces[face] = (texture, uv1, uv2)
+        self.faces[face] = (texture, uv1, uv2, rot)
+
+    def _permute(self, i, rot):
+        return (i + rot) % 4
 
     def _transform_vertex_list(self, l: List[glm.vec4]) -> List[glm.vec4]:
         """
@@ -111,24 +117,29 @@ class Cube:
         uvs = []
         for face in self.faces:
             dat = Cube.FACES[face]
-            texture, uv1, uv2 = self.faces[face]
+            texture, uv1, uv2, rot = self.faces[face]
             v1 = self.start + (self.off * dat[0])
             v2 = v1 + (self.off * dat[1])
             v3 = v2 + (self.off * dat[2])
             v4 = v1 + (self.off * dat[2])
-            vertices.append(glm.vec4(v1, 1))
-            uvs.append(atlas.uv_for(texture, uv1[0], uv1[1]))
-            vertices.append(glm.vec4(v2, 1))
-            uvs.append(atlas.uv_for(texture, uv1[0], uv2[1]))
-            vertices.append(glm.vec4(v3, 1))
-            uvs.append(atlas.uv_for(texture, uv2[0], uv2[1]))
-            vertices.append(glm.vec4(v1, 1))
-            uvs.append(atlas.uv_for(texture, uv1[0], uv1[1]))
-            vertices.append(glm.vec4(v4, 1))
-            uvs.append(atlas.uv_for(texture, uv2[0], uv1[1]))
-            vertices.append(glm.vec4(v3, 1))
-            uvs.append(atlas.uv_for(texture, uv2[0], uv2[1]))
+            uvs_ = [[uv1[0], uv1[1]],
+                   [uv1[0], uv2[1]],
+                   [uv2[0], uv2[1]],
+                   [uv2[0], uv1[1]]]
 
+            vertices.append(glm.vec4(v1, 1))
+            uvs.append(atlas.uv_for(texture, *(uvs_[self._permute(0, rot)])))
+            vertices.append(glm.vec4(v2, 1))
+            uvs.append(atlas.uv_for(texture, *(uvs_[self._permute(1, rot)])))
+            vertices.append(glm.vec4(v3, 1))
+            uvs.append(atlas.uv_for(texture, *(uvs_[self._permute(2, rot)])))
+
+            vertices.append(glm.vec4(v1, 1))
+            uvs.append(atlas.uv_for(texture, *(uvs_[self._permute(0, rot)])))
+            vertices.append(glm.vec4(v4, 1))
+            uvs.append(atlas.uv_for(texture, *(uvs_[self._permute(3, rot)])))
+            vertices.append(glm.vec4(v3, 1))
+            uvs.append(atlas.uv_for(texture, *(uvs_[self._permute(2, rot)])))
         return self._transform_vertex_list(vertices), uvs
 
 
@@ -149,6 +160,7 @@ class BlockModel:
 
 
     """
+
     def __init__(self):
         self.cubes = None
         self.textures = {}
@@ -217,7 +229,7 @@ class BlockModel:
         # first, check if parent has cubes
         if parent.cubes is not None:
             if self.cubes is None:
-                self.cubes = parent.cubes.copy() # only if we don't define cubes do we override
+                self.cubes = parent.cubes.copy()  # only if we don't define cubes do we override
 
         # next, try to override textures
         new_textures = parent.textures.copy()
@@ -287,19 +299,23 @@ class BlockModel:
                         rescale = rotation.get("rescale", False)
                         cube.set_rotation(origin, axis, angle, rescale)
                     for face_n, face in element["faces"].items():
+                        rot = int(face.get("rotation", 0) / 90)
                         if "uv" in face:
-                            cube.set_face(face_n, face["texture"][1:], face["uv"][:2], face["uv"][2:])
+                            cube.set_face(face_n, face["texture"][1:], rot, face["uv"][:2], face["uv"][2:])
                         else:
-                            cube.set_face(face_n, face["texture"][1:])
+                            cube.set_face(face_n, face["texture"][1:], rot)
                     model.cubes.append(cube)
             if "display" in json_data:
                 for kind, data in json_data["display"].items():
-                    model.transforms[kind] = cls._create_transform_for(data["rotation"], data["scale"], data["translation"])
+                    model.transforms[kind] = cls._create_transform_for(data["rotation"], data["scale"],
+                                                                       data["translation"])
             model.transforms[None] = glm.mat4(1)
+            realpath = location if not hasattr(location, "get_real_path") else location.get_real_path()
             if "parent" in json_data:
-                parent = BlockModel.load_from_file(workspace, DomainResourceLocation("models", json_data["parent"], filetype=".json"))
+                parent = BlockModel.load_from_file(workspace, DomainResourceLocation("models", json_data["parent"],
+                                                                                     filetype=".json"))
                 model.merge_with_parent(parent)
-            elif not location.get_real_path().endswith("block.json"):
+            elif not realpath.endswith("block.json"):
                 parent = BlockModel.load_from_file(workspace, DomainResourceLocation("models", "block/block",
                                                                                      filetype=".json"))
                 model.merge_with_parent(parent)

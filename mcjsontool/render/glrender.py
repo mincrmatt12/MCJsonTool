@@ -73,6 +73,15 @@ class OffscreenModelRendererThread(QThread):
 
     @pyqtSlot(str, BlockModel)
     def queue_render_order(self, order_name, model):
+        """
+        Render a block model in item format. Subscribing (connecting) to the renderedTexture signal allows you to get the rendered texture back.
+
+        Pass in an order name so you know which image you got back
+
+        :param order_name: the order name. passed to renderedTexture
+        :param model: the blockmodel
+        :return:
+        """
         self.ctx.makeCurrent(self.offscreen_surface)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self.fbo)
         GL.glViewport(0, 0, OffscreenModelRendererThread.TEX_SIZE, OffscreenModelRendererThread.TEX_SIZE)
