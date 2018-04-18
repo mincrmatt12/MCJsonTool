@@ -2,3 +2,4 @@ pyqt5
 PyGLM
 numpy
 pillow
+pyopengl

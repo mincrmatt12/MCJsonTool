@@ -292,6 +292,7 @@ class BlockModel:
             if "display" in json_data:
                 for kind, data in json_data["display"].items():
                     model.transforms[kind] = cls._create_transform_for(data["rotation"], data["scale"], data["translation"])
+            model.transforms[None] = glm.mat4(1)
             if "parent" in json_data:
                 parent = BlockModel.load_from_file(workspace, DomainResourceLocation("models", json_data["parent"], filetype=".json"))
                 model.merge_with_parent(parent)
