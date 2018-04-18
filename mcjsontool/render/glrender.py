@@ -73,14 +73,13 @@ class OffscreenModelRendererThread(QThread):
     def queue_render_order(self, order_name, model):
         self.ctx.makeCurrent(self.offscreen_surface)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self.fbo)
+        GL.glViewport(0, 0, 64, 64)
         GL.glClearColor(0, 0, 0, 0)
         GL.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT)
         self.renderer.setup_data_for_block_model(model)
         self.renderer.resize(64, 64)
-        self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(32, 32, 32), glm.vec3(0, 0, 0), glm.vec3(0, 1, 0)), None)
-        GL.glFlush()
+        self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(20, 20, 20), glm.vec3(8, 8, 8), glm.vec3(0, 1, 0)), None)
         tex_str = GL.glReadPixels(0, 0, 64, 64, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, outputType=bytes)
-        print(tex_str)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
         qimage = QImage(tex_str, 64, 64, 64*4, QImage.Format_RGBA8888)
         qimage = qimage.mirrored(vertical=True)
@@ -158,20 +157,24 @@ class ModelRenderer(QObject):
         self.shader.bind()
         GL.glUniformMatrix4fv(1, 1, GL.GL_FALSE, glm.value_ptr(proj_view))
         GL.glUniformMatrix4fv(0, 1, GL.GL_FALSE, glm.value_ptr(model_transform))
-        print(proj_view * model_transform * self.array[0])
+        print(model_transform * self.array[0])
         GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture)
 
-    def draw_loaded_model(self, view_matrix, transform_name):
+    def draw_loaded_model(self, view_matrix, transform_name, proj=None):
         """
         Draw the loaded model with transforms and view
 
+        :param proj: projection matrix for doing ortho
         :param view_matrix: View matrix (y should be up)
         :param transform_name: Transform name in model
         """
         if self.current_model is None:
             raise ValueError("No model is loaded!")
 
-        self._plumb_shader_for(self.proj_mat * view_matrix, self.current_model.transforms[transform_name])
+        if proj is None:
+            proj = self.proj_mat
+
+        self._plumb_shader_for(proj * view_matrix, self.current_model.transforms[transform_name])
         GL.glBindVertexArray(self.vao)
 
         GL.glEnable(GL.GL_DEPTH_TEST)

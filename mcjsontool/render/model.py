@@ -251,10 +251,14 @@ class BlockModel:
     @classmethod
     def _create_transform_for(cls, rot, scale, trans):
         mat = glm.mat4(1)
-        mat = glm.rotate(mat, rot[0], glm.vec3(1, 0, 0))
-        mat = glm.rotate(mat, rot[1], glm.vec3(0, 1, 0))
-        mat = glm.rotate(mat, rot[2], glm.vec3(0, 0, 1))
         mat = glm.translate(mat, glm.vec3(trans))
+        print(rot)
+
+        #mat = glm.translate(mat, glm.vec3(-8, -8, -8))
+        mat = glm.rotate(mat, math.radians(rot[0]), glm.vec3(1, 0, 0))
+        mat = glm.rotate(mat, math.radians(rot[1]), glm.vec3(0, 1, 0))
+        mat = glm.rotate(mat, math.radians(rot[2]), glm.vec3(0, 0, 1))
+        #mat = glm.translate(mat, glm.vec3(8, 8, 8))
         mat = glm.scale(mat, glm.vec3(scale))
         return mat
 

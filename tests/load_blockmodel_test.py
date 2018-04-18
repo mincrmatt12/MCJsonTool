@@ -39,7 +39,7 @@ class MyOPENGL(QOpenGLWindow):
         self.i += 1
         try:
             self.renderer.setup_data_for_block_model(a)
-            self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(19, 19, 19), glm.vec3(0, 0, 0), glm.vec3(0, 1, 0)), None)
+            self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(20, 20, 20), glm.vec3(8, 8, 8), glm.vec3(0, 1, 0)),None)
         except:
             return
 
