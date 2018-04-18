@@ -26,10 +26,13 @@ class MyOPENGL(QOpenGLWindow):
         self.timer.start(100)
 
     def initializeGL(self):
-        #print("A"
-        self.renderer = ModelRenderer(workspace, self)
-        #GL.glDepthFunc(GL.GL_LESS)
-        self. i = 0
+        if not hasattr(self, "renderer"):
+            self.renderer = ModelRenderer(workspace, self)
+            self.i = -5*80
+
+    def resizeGL(self, p_int, p_int_1):
+        if hasattr(self, "renderer"):
+            self.renderer.resize(p_int, p_int_1)
 
     def paintGL(self):
         print("A")
@@ -39,7 +42,7 @@ class MyOPENGL(QOpenGLWindow):
         self.i += 1
         try:
             self.renderer.setup_data_for_block_model(a)
-            self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(20, 20, 20), glm.vec3(8, 8, 8), glm.vec3(0, 1, 0)),None)
+            self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(15, 5, 5), glm.vec3(5, 5, 5), glm.vec3(0, 1, 0)), "gui", glm.ortho(-10, 10, 10, -10, 0.1, 50))
         except:
             return
 

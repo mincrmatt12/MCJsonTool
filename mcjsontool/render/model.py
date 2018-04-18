@@ -251,14 +251,11 @@ class BlockModel:
     @classmethod
     def _create_transform_for(cls, rot, scale, trans):
         mat = glm.mat4(1)
-        mat = glm.translate(mat, glm.vec3(trans))
-        print(rot)
-
-        #mat = glm.translate(mat, glm.vec3(-8, -8, -8))
-        mat = glm.rotate(mat, math.radians(rot[0]), glm.vec3(1, 0, 0))
-        mat = glm.rotate(mat, math.radians(rot[1]), glm.vec3(0, 1, 0))
-        mat = glm.rotate(mat, math.radians(rot[2]), glm.vec3(0, 0, 1))
-        #mat = glm.translate(mat, glm.vec3(8, 8, 8))
+        mat = glm.translate(mat, glm.vec3(trans) + glm.vec3(8, 8, 8) * glm.vec3(scale))
+        mat = glm.rotate(mat, -math.radians(rot[0]), glm.vec3(0, 0, 1))
+        mat = glm.rotate(mat, -math.radians(rot[1]), glm.vec3(0, 1, 0))
+        mat = glm.rotate(mat, -math.radians(rot[2]), glm.vec3(1, 0, 0))
+        mat = glm.translate(mat, glm.vec3(-8, -8, -8) * glm.vec3(scale))
         mat = glm.scale(mat, glm.vec3(scale))
         return mat
 
@@ -301,5 +298,9 @@ class BlockModel:
             model.transforms[None] = glm.mat4(1)
             if "parent" in json_data:
                 parent = BlockModel.load_from_file(workspace, DomainResourceLocation("models", json_data["parent"], filetype=".json"))
+                model.merge_with_parent(parent)
+            elif not location.get_real_path().endswith("block.json"):
+                parent = BlockModel.load_from_file(workspace, DomainResourceLocation("models", "block/block",
+                                                                                     filetype=".json"))
                 model.merge_with_parent(parent)
             return model

@@ -13,6 +13,7 @@ from mcjsontool.resource.workspace import Workspace
 
 
 class OffscreenModelRendererThread(QThread):
+    TEX_SIZE = 128
     renderedTexture = pyqtSignal(str, QImage)
 
     def __init__(self, parent_screen):
@@ -41,7 +42,6 @@ class OffscreenModelRendererThread(QThread):
 
     @pyqtSlot(Workspace)
     def setWorkspace(self, w):
-        pass
         if hasattr(self, "renderer"):
             self.renderer.set_workspace(w)
         else:
@@ -56,10 +56,12 @@ class OffscreenModelRendererThread(QThread):
         GL.glBindTexture(GL.GL_TEXTURE_2D, self.tex)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST)
-        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, 64, 64, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, None)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, OffscreenModelRendererThread.TEX_SIZE,
+                        OffscreenModelRendererThread.TEX_SIZE, 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, None)
 
         GL.glBindRenderbuffer(GL.GL_RENDERBUFFER, self.rbuf)
-        GL.glRenderbufferStorage(GL.GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT24, 64, 64)
+        GL.glRenderbufferStorage(GL.GL_RENDERBUFFER, GL.GL_DEPTH_COMPONENT24, OffscreenModelRendererThread.TEX_SIZE,
+                                 OffscreenModelRendererThread.TEX_SIZE)
 
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self.fbo)
         GL.glFramebufferRenderbuffer(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_RENDERBUFFER, self.rbuf)
@@ -73,15 +75,18 @@ class OffscreenModelRendererThread(QThread):
     def queue_render_order(self, order_name, model):
         self.ctx.makeCurrent(self.offscreen_surface)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, self.fbo)
-        GL.glViewport(0, 0, 64, 64)
+        GL.glViewport(0, 0, OffscreenModelRendererThread.TEX_SIZE, OffscreenModelRendererThread.TEX_SIZE)
         GL.glClearColor(0, 0, 0, 0)
         GL.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT)
         self.renderer.setup_data_for_block_model(model)
-        self.renderer.resize(64, 64)
-        self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(20, 20, 20), glm.vec3(8, 8, 8), glm.vec3(0, 1, 0)), None)
-        tex_str = GL.glReadPixels(0, 0, 64, 64, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, outputType=bytes)
+        self.renderer.resize(OffscreenModelRendererThread.TEX_SIZE, OffscreenModelRendererThread.TEX_SIZE)
+        self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(15, 5, 5), glm.vec3(5, 5, 5), glm.vec3(0, 1, 0)), "gui",
+                                        glm.ortho(-10, 10, 10, -10, 0.1, 50))
+        tex_str = GL.glReadPixels(0, 0, OffscreenModelRendererThread.TEX_SIZE, OffscreenModelRendererThread.TEX_SIZE,
+                                  GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, outputType=bytes)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
-        qimage = QImage(tex_str, 64, 64, 64*4, QImage.Format_RGBA8888)
+        qimage = QImage(tex_str, OffscreenModelRendererThread.TEX_SIZE, OffscreenModelRendererThread.TEX_SIZE,
+                        OffscreenModelRendererThread.TEX_SIZE * 4, QImage.Format_RGBA8888)
         qimage = qimage.mirrored(vertical=True)
         self.renderedTexture.emit(order_name, qimage)
 
@@ -92,16 +97,17 @@ class ModelRenderer(QObject):
 
     You need: an opengl surface, an opengl context and a workspace instance.
     """
+
     def __init__(self, workspace, surface: QSurface):
         super().__init__()
 
         self.surf = surface
         prof = QOpenGLVersionProfile()
         prof.setVersion(2, 0)
-        
+
         self.vao = GL.glGenVertexArrays(1)
         self.vbo, self.vbo2 = GL.glGenBuffers(2)
-        
+
         self.texture = -1
         self.current_model: BlockModel = None
         self.workspace = workspace
@@ -113,7 +119,7 @@ class ModelRenderer(QObject):
         self.shader.addShaderFromSourceFile(QOpenGLShader.Fragment, "shader/block.fragment.glsl")
         self.shader.link()
 
-        self.proj_mat = glm.perspective(1.57, self.surf.size().width()/self.surf.size().height(), 0.1, 100)
+        self.proj_mat = glm.perspective(1.57, self.surf.size().width() / self.surf.size().height(), 0.1, 100)
         self.texture = GL.glGenTextures(1)
 
     def set_workspace(self, workspace):
@@ -134,7 +140,8 @@ class ModelRenderer(QObject):
         GL.glBindTexture(GL.GL_TEXTURE_2D, self.texture)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST)
         GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST)
-        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, atlas.size[0], atlas.size[1], 0, GL.GL_RGBA, GL.GL_UNSIGNED_BYTE, atlas.data)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_RGBA, atlas.size[0], atlas.size[1], 0, GL.GL_RGBA,
+                        GL.GL_UNSIGNED_BYTE, atlas.data)
         verts, uvs = model.compile_to_vertex_list(atlas)
         verts = list(map(lambda x: list(x), verts))
         uvs = list(map(lambda x: list(x), uvs))
@@ -142,7 +149,7 @@ class ModelRenderer(QObject):
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.vbo)
         self.array1 = np.array(verts, dtype=np.float32).ravel()
         self.array2 = np.array(uvs, dtype=np.float32).ravel()
-        GL.glBufferData(GL.GL_ARRAY_BUFFER, self.array1.size*4, self.array1, GL.GL_DYNAMIC_DRAW)
+        GL.glBufferData(GL.GL_ARRAY_BUFFER, self.array1.size * 4, self.array1, GL.GL_DYNAMIC_DRAW)
         GL.glEnableVertexAttribArray(0)
         GL.glEnableVertexAttribArray(1)
         GL.glVertexAttribPointer(0, 4, GL.GL_FLOAT, GL.GL_FALSE, 0, ctypes.c_void_p(0))
@@ -174,6 +181,8 @@ class ModelRenderer(QObject):
         if proj is None:
             proj = self.proj_mat
 
+        print(self.current_model.transforms[transform_name])
+
         self._plumb_shader_for(proj * view_matrix, self.current_model.transforms[transform_name])
         GL.glBindVertexArray(self.vao)
 
@@ -184,4 +193,4 @@ class ModelRenderer(QObject):
         """
         Resize the modelRenderer to acommodate for differing aspect ratios
         """
-        self.proj_mat = glm.perspective(1.57, width/height, 0.1, 100)
+        self.proj_mat = glm.perspective(1.57, width / height, 0.1, 100)
