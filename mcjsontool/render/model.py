@@ -57,9 +57,9 @@ class Cube:
         :param rescale: fixme: currently ignored
         :return:
         """
-        self.matrix = glm.translate(glm.mat4(1), -glm.vec3(*origin))
+        self.matrix = glm.translate(glm.mat4(1), glm.vec3(*origin))
         self.matrix = glm.rotate(self.matrix, math.radians(angle), Cube.AXES[axis])
-        self.matrix = glm.translate(self.matrix, glm.vec3(*origin))
+        self.matrix = glm.translate(self.matrix, -glm.vec3(*origin))
 
     def remove_face(self, face):
         """
@@ -299,7 +299,7 @@ class BlockModel:
                         rescale = rotation.get("rescale", False)
                         cube.set_rotation(origin, axis, angle, rescale)
                     for face_n, face in element["faces"].items():
-                        rot = int(face.get("rotation", 0) / 90)
+                        rot = -int(face.get("rotation", 0) / 90)
                         if "uv" in face:
                             cube.set_face(face_n, face["texture"][1:], rot, face["uv"][:2], face["uv"][2:])
                         else:

@@ -21,10 +21,6 @@ class MyOPENGL(QOpenGLWindow):
     def __init__(self, *__args):
         super().__init__(*__args)
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.timer_fired)
-        self.timer.start(100)
-
     def initializeGL(self):
         if not hasattr(self, "renderer"):
             self.renderer = ModelRenderer(workspace, self)
@@ -38,16 +34,15 @@ class MyOPENGL(QOpenGLWindow):
         print("A")
         GL.glClearColor(0, 0, 0, 0)
         GL.glClear(GL.GL_DEPTH_BUFFER_BIT | GL.GL_COLOR_BUFFER_BIT)
-        a = BlockModel.load_from_file(workspace, ResourceLocation("minecraft", "models/block/andesite.json"))
+        a = BlockModel.load_from_file(workspace, all_models[self.i])
         self.i += 1
         try:
             self.renderer.setup_data_for_block_model(a)
-            self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(15, 5, 5), glm.vec3(5, 5, 5), glm.vec3(0, 1, 0)), "gui", glm.ortho(-10, 10, 10, -10, 0.1, 50))
+            self.renderer.draw_loaded_model(glm.lookAt(glm.vec3(15, 5, 5), glm.vec3(5, 5, 5), glm.vec3(0, 1, 0)), "gui", glm.ortho(-10, 10, -10, 10, 0.1, 50))
         except:
             return
 
-    @pyqtSlot()
-    def timer_fired(self):
+    def mousePressEvent(self, *args, **kwargs):
         self.update()
 
 

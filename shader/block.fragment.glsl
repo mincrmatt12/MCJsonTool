@@ -6,4 +6,7 @@ layout(binding = 0) uniform sampler2D TextureAtlas;
 
 void main() {
     Color = texture(TextureAtlas, FragUV);
+    if (Color.a < 0.01) {
+        discard;
+    }
 }
