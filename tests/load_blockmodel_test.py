@@ -43,6 +43,7 @@ class MyOPENGL(QOpenGLWindow):
             return
 
     def mousePressEvent(self, *args, **kwargs):
+        self.i += 1
         self.update()
 
 
