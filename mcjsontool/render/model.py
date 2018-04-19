@@ -32,12 +32,12 @@ class Cube:
     # coord = self.start + self.off * [0] + self.off * [1] * up + self.off * [2] * right
     # last is left/right axis, up/down axis neg means invert start/end
     FACES = {
-        "up": (glm.vec3(0, 1, 0), glm.vec3(0, 0, 1), glm.vec3(1, 0, 0), [0, 2], [True, True]),
-        "down": (glm.vec3(1, 0, 1), glm.vec3(0, 0, -1), glm.vec3(-1, 0, 0), [0, 2], [False, False]),
-        "east": (glm.vec3(1, 0, 0), glm.vec3(0, 1, 0), glm.vec3(0, 0, 1), [1, 2], [True, True]),
-        "west": (glm.vec3(0, 1, 1), glm.vec3(0, -1, 0), glm.vec3(0, 0, -1), [1, 2], [False, False]),
-        "south": (glm.vec3(0, 0, 1), glm.vec3(0, 1, 0), glm.vec3(1, 0, 0), [1, 0], [True, True]),
-        "north": (glm.vec3(1, 1, 0), glm.vec3(0, -1, 0), glm.vec3(-1, 0, 0), [1, 0], [False, False])
+        "up": (glm.vec3(0, 1, 0), glm.vec3(0, 0, 1), glm.vec3(1, 0, 0), [0, 2]),
+        "down": (glm.vec3(0, 0, 0), glm.vec3(0, 0, 1), glm.vec3(1, 0, 0), [0, 2]),
+        "east": (glm.vec3(1, 0, 0), glm.vec3(0, 1, 0), glm.vec3(0, 0, 1), [1, 2]),
+        "west": (glm.vec3(0, 0, 0), glm.vec3(0, 1, 0), glm.vec3(0, 0, 1), [1, 2]),
+        "south": (glm.vec3(0, 0, 1), glm.vec3(0, 1, 0), glm.vec3(1, 0, 0), [1, 0]),
+        "north": (glm.vec3(0, 0, 0), glm.vec3(0, 1, 0), glm.vec3(1, 0, 0), [1, 0])
     }
 
     def __init__(self, start, end):
@@ -84,12 +84,12 @@ class Cube:
         if uv1 is None and uv2 is None:
             dat = Cube.FACES[face]
             uv1 = [
-                max(0, min(16, (self.start if dat[4][0] else self.end)[int(abs(dat[3][0]))])),
-                max(0, min(16, (self.start if dat[4][1] else self.end)[int(abs(dat[3][1]))])),
+                max(0, min(16, self.start[int(abs(dat[3][0]))])),
+                max(0, min(16, self.start[int(abs(dat[3][1]))])),
             ]
             uv2 = [
-                max(0, min(16, (self.start if not dat[4][0] else self.end)[int(abs(dat[3][0]))])),
-                max(0, min(16, (self.start if not dat[4][1] else self.end)[int(abs(dat[3][1]))])),
+                max(0, min(16, self.end[int(abs(dat[3][0]))])),
+                max(0, min(16, self.end[int(abs(dat[3][1]))])),
             ]
 
         self.faces[face] = (texture, uv1, uv2, rot)
@@ -122,10 +122,10 @@ class Cube:
             v2 = v1 + (self.off * dat[1])
             v3 = v2 + (self.off * dat[2])
             v4 = v1 + (self.off * dat[2])
-            uvs_ = [[uv1[0], uv1[1]],
-                   [uv1[0], uv2[1]],
-                   [uv2[0], uv2[1]],
-                   [uv2[0], uv1[1]]]
+            uvs_ = [[uv1[0], uv2[1]],
+                   [uv1[0], uv1[1]],
+                   [uv2[0], uv1[1]],
+                   [uv2[0], uv2[1]]]
 
             vertices.append(glm.vec4(v1, 1))
             uvs.append(atlas.uv_for(texture, *(uvs_[self._permute(0, rot)])))
