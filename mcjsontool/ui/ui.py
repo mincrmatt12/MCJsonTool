@@ -1,11 +1,9 @@
 from PyQt5.QtCore import pyqtSlot, QMetaObject, Q_ARG
-from PyQt5.QtGui import QImage
 
 from mcjsontool.render.glrender import OffscreenModelRendererThread
-from mcjsontool.render.model import BlockModel
 from mcjsontool.resource.recentstore import RecentStore
-from mcjsontool.resource.workspace import Workspace, ResourceLocation
-from mcjsontool.ui.main.workspacewizard import WorkspaceWizard
+from mcjsontool.resource.workspace import Workspace
+from mcjsontool.ui.workspace.workspacewizard import WorkspaceWizard
 from . import main_ui
 from PyQt5.QtWidgets import QMainWindow, QAction
 
