@@ -87,7 +87,12 @@
      <addaction name="actionFile"/>
     </widget>
     <addaction name="menuNew"/>
-    <addaction name="actionRecent"/>
+    <widget class="QMenu" name="menuRecent">
+      <property name="title">
+        <string>Recent workspaces</string>
+      </property>
+    </widget>
+	<addaction name="menuRecent" />
     <addaction name="actionOpen"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>

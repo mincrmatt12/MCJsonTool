@@ -1,8 +1,11 @@
 import abc
 import os
+import pickle
+import threading
 import time
 import pathlib
 
+from PyQt5.QtWidgets import QWidget
 
 REFRESH_FILES_AFTER = 1200
 
@@ -77,6 +80,7 @@ class DomainResourceLocation(ResourceLocation):
     DomainResourceLocations are like resourcelocations, but prepend a domain before the path when you know
     what kind of resource you want. Optionally adds filetypes
     """
+
     def __init__(self, domain, *resourcelocation, filetype=""):
         """
         Create a new DomainResourceLocation
@@ -120,7 +124,19 @@ class FileProvider(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def list_paths(self):
+        """
+        Return a list of paths that this provider has
+        """
         return []
+
+    @classmethod
+    def create_edit_widget(self, parent) -> QWidget:
+        """
+        Create a QWidget to edit this Provider (or source as the UI calls them) (who named this crap?) (me?) (i have no knowledge of this)
+        :return: QWidget
+        :param parent: The widget that your widget should be a child of
+        """
+        return QWidget(parent)
 
 
 class Workspace:
@@ -138,12 +154,33 @@ class Workspace:
 
     This class is picklable
     """
+
     def __init__(self, name, mode):
         self.providers = []
         self.name = name
         self.mode = mode
         self.file_list_cache = []
         self.last_file_update_time = 0
+
+        self.file_list_lock = threading.Lock()
+
+    @classmethod
+    def load_from_file(cls, path):
+        with open(path, "rb") as f:
+            return pickle.load(f)
+
+    def __getstate__(self):
+        dict_ = self.__dict__.copy()
+        del dict_["file_list_lock"]
+        return dict_
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.file_list_lock = threading.Lock()
+
+    def save_to_file(self, path):
+        with open(path, "wb") as f:
+            pickle.dump(self, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     def get_file(self, path, mode="r"):
         """
@@ -187,16 +224,28 @@ class Workspace:
 
         :return: A list of all paths
         """
-
         if time.time() - self.last_file_update_time > REFRESH_FILES_AFTER:
-            self.refresh_file_cache()
-        return self.file_list_cache
+            self.refresh_file_cache(wait_for_complete=not self.file_list_cache)
+        with self.file_list_lock:
+            return self.file_list_cache
 
-    def refresh_file_cache(self):
+    def _refresh_file_cache(self):
         """
         Refresh the list of known paths to this workspace. Can take a while!
         """
 
-        self.file_list_cache = []
+        file_list_cache = []
         for i in self.providers:
-            self.file_list_cache.extend(i.list_paths())
+            file_list_cache.extend(i.list_paths())
+        with self.file_list_lock:
+            self.file_list_cache = file_list_cache
+
+    def refresh_file_cache(self, wait_for_complete=True):
+        """
+        Refresh the list of known paths to this workspace. Allows you to do it in the background if you want.
+        :param wait_for_complete: Wait for completion of the task
+        """
+        if wait_for_complete:
+            self._refresh_file_cache()
+        else:
+            threading.Thread(target=self._refresh_file_cache).start()

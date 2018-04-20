@@ -143,11 +143,14 @@ class NavigatorWidget(QWidget):
     @pyqtSlot(Workspace)
     def setWorkspace(self, w):
         self.workspace = w
-        self.models = [FileModel(w)]
-        for i in BasePlugin.PLUGIN_TYPES:
-            self.models.extend(
-                [x(w) for x in i.get_additional_models_for_navigator()]
-            )
+        if w is None:
+            self.models = []
+        else:
+            self.models = [FileModel(w)]
+            for i in BasePlugin.PLUGIN_TYPES:
+                self.models.extend(
+                    [x(w) for x in i.get_additional_models_for_navigator()]
+                )
         self._add_tabs()
 
     def _add_tabs(self):

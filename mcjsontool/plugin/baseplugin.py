@@ -41,6 +41,21 @@ class BasePlugin(metaclass=abc.ABCMeta):
         """
         return None  # abstract
 
+    def save_file(self):
+        """
+        Called when the UI wants to save the file
+        """
+        pass
+
+    def is_saved(self) -> bool:
+        """
+        Has the file been modified since last save? Used for warnings when closing tabs
+
+        .. warning:
+            The default implementation always returns True, which can cause loss of work.
+        """
+        return True
+
 
 def register_plugin(plugin):
     """
