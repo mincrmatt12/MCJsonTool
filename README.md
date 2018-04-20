@@ -11,6 +11,10 @@ Then, run main.py
 
 - Python >=3.6
 - PyQt5
+- PyOpenGL
+- numpy
+- PyGLM (if you do python 3d, check this out! it's fairly new)
+- pillow
 
 ## Releases
 
