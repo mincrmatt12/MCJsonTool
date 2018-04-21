@@ -32,7 +32,7 @@ class WorkspaceWizard(QWizard, Ui_Wizard):
         user_select, ok = QInputDialog.getItem(self, "Select source type", "Please select a source type from the options below", list_, editable=False)
         if ok:
             i = list_.index(user_select)
-            edit_widget = fileloaders.fileloaderui[i].create_edit_widget(self.settingsBox)
+            edit_widget = fileloaders.fileloaders[i].create_edit_widget(self.settingsBox)
             self.edit_widgets.append(edit_widget)
             self.update_list()
 
