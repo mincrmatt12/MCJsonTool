@@ -1,5 +1,7 @@
 import json
 
+from PyQt5.QtWidgets import QWidget
+
 from mcjsontool.resource.workspace import ResourceLocation
 from .baseplugin import BasePlugin, register_plugin
 
@@ -16,7 +18,7 @@ class AdvancementPlugin(BasePlugin):
         return []
 
     def get_ui_widget(self):
-        return
+        return QWidget()
 
     @classmethod
     def handles_file(cls, file_location, workspace):

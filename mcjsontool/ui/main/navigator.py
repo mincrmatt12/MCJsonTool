@@ -164,6 +164,7 @@ class NavigatorWidget(QWidget):
             tree_widget.setModel(proxy)
             tree_widget.setSortingEnabled(True)
             self.tab_view.addTab(tree_widget, i.tabName())
+            tree_widget.doubleClicked.connect(self.double_click)
 
     @pyqtSlot(QModelIndex)
     def double_click(self, index: QModelIndex):

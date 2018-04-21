@@ -21,6 +21,8 @@ class OpenFileManager(QObject):
 
     def setWorkspace(self, w):
         self.workspace = w
+        if self.associated_files == [None]:
+            return
         self.tabman.clear()
         self.associated_files.clear()
 
@@ -51,6 +53,9 @@ class OpenFileManager(QObject):
                         del self.associated_files[index]
                     else:
                         return
+                else:
+                    self.tabman.removeTab(index)
+                    del self.associated_files[index]
 
     def open_file(self, location):
         """

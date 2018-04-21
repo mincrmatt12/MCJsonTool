@@ -3,6 +3,7 @@ import sys
 from PyQt5.QtGui import QSurfaceFormat
 from PyQt5.QtWidgets import QApplication
 from mcjsontool.ui.ui import JSONToolUI
+import mcjsontool.plugin
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
