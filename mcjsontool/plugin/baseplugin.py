@@ -20,13 +20,24 @@ class BasePlugin(metaclass=abc.ABCMeta):
         pass
 
     @classmethod
+    def name(cls):
+        return cls.__name__
+
+    @classmethod
+    @abc.abstractmethod
+    def handles_file(cls, file_location, workspace):
+        return False
+
+    @classmethod
     def get_additional_models_for_navigator(cls):
         """
         Get a list of additional QAbstractItemModels to add to the navigator.
         Your model must:
             - give data using the UserRole containing a path to the content, to handle double-click
             - take a workspace as its only constructor parameter
-            - provide a function called tabName() which returns the tab name
+            - provide a function called tabName() which returns the tab name.
+
+        It should also handle stuff like drag+drop/deletion, as well as new/delete using context menus.
 
         :return: list of additional models (can be empty)
         """

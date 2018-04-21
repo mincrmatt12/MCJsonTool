@@ -57,4 +57,4 @@ class FolderFileProvider(FileProvider):
 
 
 fileloaders = [JarFileProvider, FolderFileProvider]
-from ..ui.workspace import fileloaders
+from ..ui.workspace import fileloaderui

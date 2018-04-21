@@ -1,3 +1,6 @@
+import json
+
+from mcjsontool.resource.workspace import ResourceLocation
 from .baseplugin import BasePlugin, register_plugin
 
 
@@ -14,3 +17,16 @@ class AdvancementPlugin(BasePlugin):
 
     def get_ui_widget(self):
         return
+
+    @classmethod
+    def handles_file(cls, file_location, workspace):
+        if type(file_location) is not ResourceLocation:
+            file_location = ResourceLocation.from_real_path(file_location)
+        if not file_location.data[1].startswith("advancements"):
+            return False
+        try:
+            with workspace.get_file(file_location, "r") as f:
+                dat = json.load(f)
+                return "criteria" in dat
+        except json.JSONDecodeError:
+            return False
