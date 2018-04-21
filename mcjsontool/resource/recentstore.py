@@ -81,9 +81,9 @@ class RecentStore:
                         self._most_recent = i
                         return
                     else:
-                        self.files.append((x[0], x[1], time.time()))
+                        self.files.append([x[0], x[1], time.time()])
                 else:
-                    self.files.append(x)
+                    self.files.append(list(x))
                 self._most_recent = len(self.files) - 1
 
     def __iter__(self):
@@ -129,4 +129,4 @@ class RecentStore:
         while name is None or name in self:
             name = str(self._last_n)
             self._last_n += 1
-        self.files.append((name, path, time))
+        self.files.append([name, path, time])
