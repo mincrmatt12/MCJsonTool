@@ -3,6 +3,7 @@ from PyQt5.QtCore import pyqtSlot, QMetaObject, Q_ARG
 from mcjsontool.render.glrender import OffscreenModelRendererThread
 from mcjsontool.resource.recentstore import RecentStore
 from mcjsontool.resource.workspace import Workspace
+from mcjsontool.ui.main.openfileman import OpenFileManager
 from mcjsontool.ui.workspace.workspacewizard import WorkspaceWizard
 from . import main_ui
 from PyQt5.QtWidgets import QMainWindow, QAction
@@ -21,6 +22,9 @@ class JSONToolUI(QMainWindow, main_ui.Ui_MainWindow):
         self.actionWorkspace.triggered.connect(self.newWorkspace)
         self.activePlugins = []
         self.recent_workspaces = RecentStore("workspaces")
+
+        self.open_file_man = OpenFileManager(self, self.tabs)
+        self.navWidget.open_file.connect(self.on_open_file)
         if self.recent_workspaces.most_recent:
             self.setWorkspace(Workspace.load_from_file(self.recent_workspaces.most_recent[1]))
 
@@ -41,6 +45,10 @@ class JSONToolUI(QMainWindow, main_ui.Ui_MainWindow):
     def closeEvent(self, *args, **kwargs):
         self.recent_workspaces.save()
 
+    @pyqtSlot(str)
+    def on_open_file(self, f):
+        self.open_file_man.open_file(f)
+
     @pyqtSlot(QAction)
     def on_recent(self, act):
         workspace = Workspace.load_from_file(act.data()[1])
@@ -51,6 +59,7 @@ class JSONToolUI(QMainWindow, main_ui.Ui_MainWindow):
     @pyqtSlot(Workspace)
     def setWorkspace(self, w):
         self.navWidget.setWorkspace(w)
+        self.open_file_man.setWorkspace(w)
         QMetaObject.invokeMethod(self.asyncModelRenderer, "setWorkspace", Q_ARG(Workspace, w))
         self.workspace = w
 

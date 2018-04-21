@@ -1,7 +1,7 @@
 import pathlib
 from typing import Type
 
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QObject, pyqtSlot
 from PyQt5.QtWidgets import QTabWidget, QMessageBox
 
 from mcjsontool.plugin.baseplugin import BasePlugin
@@ -41,8 +41,7 @@ class OpenFileManager(QObject):
             else:
                 plugin_: BasePlugin = self.associated_files[index]
                 if not plugin_.is_saved():
-                    button = QMessageBox.warning(self.tabman, "Are you sure?", "You haven't saved this file! Do you want to save it?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-                    if button == QMessageBox.Discard:
+                    button = QMessageBox.warning(self.tabman, "Are you sure?", "You haven't saved this file! Do you want to save it?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)if button == QMessageBox.Discard:
                         self.tabman.removeTab(index)
                         del self.associated_files[index]
                     elif button == QMessageBox.Save:
@@ -66,3 +65,4 @@ class OpenFileManager(QObject):
                 self._open_tab_with_plugin(location, i)
                 return True
         return False
+

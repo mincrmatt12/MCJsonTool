@@ -22,7 +22,7 @@ class JarFileProvider(FileProvider):
 
     @classmethod
     def create_edit_widget(cls, parent):
-        return fileloaders.JarEditWidget(parent)
+        return fileloaderui.JarEditWidget(parent)
 
     def __getstate__(self):
         odict = self.__dict__.copy()
@@ -53,7 +53,7 @@ class FolderFileProvider(FileProvider):
 
     @classmethod
     def create_edit_widget(cls, parent):
-        return fileloaders.FolderEditWidget(parent)
+        return fileloaderui.FolderEditWidget(parent)
 
 
 fileloaders = [JarFileProvider, FolderFileProvider]

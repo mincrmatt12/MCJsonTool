@@ -1,6 +1,6 @@
 import pathlib
 
-from PyQt5.QtCore import QAbstractItemModel, Qt, QVariant, QModelIndex, pyqtSlot, QSortFilterProxyModel
+from PyQt5.QtCore import QAbstractItemModel, Qt, QVariant, QModelIndex, pyqtSlot, QSortFilterProxyModel, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QTabWidget, QTreeView, QVBoxLayout, QSizePolicy
 
 from mcjsontool.resource.workspace import ResourceLocation, Workspace
@@ -130,6 +130,8 @@ class FileModel(QAbstractItemModel):
 
 
 class NavigatorWidget(QWidget):
+    open_file = pyqtSignal(str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -162,3 +164,10 @@ class NavigatorWidget(QWidget):
             tree_widget.setModel(proxy)
             tree_widget.setSortingEnabled(True)
             self.tab_view.addTab(tree_widget, i.tabName())
+
+    @pyqtSlot(QModelIndex)
+    def double_click(self, index: QModelIndex):
+        resource_location = index.data(Qt.UserRole)
+        if hasattr(resource_location, "get_real_path"):
+            resource_location = resource_location.get_real_path()
+        self.open_file.emit(resource_location)
