@@ -18,7 +18,7 @@ class AdvancementPlugin(BasePlugin):
         return []
 
     def get_ui_widget(self):
-        return QWidget()
+        return QWidget()  # temp
 
     @classmethod
     def handles_file(cls, file_location, workspace):
